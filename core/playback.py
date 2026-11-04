@@ -43,7 +43,7 @@ class PlaybackEngine:
     device: Optional[int] = None
     blocksize: int = 1024
     dtype: str = "float32"
-    sample_rate
+    sample_rate: int = 48000
 
     _stream: Optional[sd.OutputStream] = field(default=None, init=False, repr=False)
     _buffer: Optional[np.ndarray] = field(default=None, init=False, repr=False)
