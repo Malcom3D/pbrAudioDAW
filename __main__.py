@@ -42,10 +42,11 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     entity_manager = EntityManager(args.config)
+    config = entity_manager.get('config')
     storage = StorageEngine(entity_manager=entity_manager, backend=args.backend or "blosc2", urlpath=args.urlpath)
 
     browser = BrowserState(storage)
-    playback = PlaybackEngine(storage=storage, device=args.device, blocksize=args.blocksize)
+    playback = PlaybackEngine(storage=storage, device=args.device, blocksize=args.blocksize, sample_rate=config.system.sample_rate)
 
     Repl(browser=browser, playback=playback).run()
     return 0

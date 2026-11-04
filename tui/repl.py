@@ -23,8 +23,6 @@ The TUI is state-thin: it only reads input, dispatches, and formats.
 All logic lives in BrowserState / PlaybackEngine / CommandRegistry.
 """
 
-from __future__ import annotations
-
 import sys
 from dataclasses import dataclass
 from typing import Optional
@@ -35,7 +33,7 @@ from ..core.commands import CommandContext, CommandRegistry, build_default_regis
 
 
 @dataclass
-class Re Repl:
+class Repl:
     browser: BrowserState
     playback: PlaybackEngine
     registry: Optional[CommandRegistry] = None

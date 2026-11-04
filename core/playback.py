@@ -43,8 +43,9 @@ class PlaybackEngine:
     device: Optional[int] = None
     blocksize: int = 1024
     dtype: str = "float32"
+    sample_rate
 
-    _stream: Optional[s[sd.OutputStream] = field(default=None, init=False, repr=False)
+    _stream: Optional[sd.OutputStream] = field(default=None, init=False, repr=False)
     _buffer: Optional[np.ndarray] = field(default=None, init=False, repr=False)
     _cursor: int = field(default=0, init=False, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
@@ -66,8 +67,7 @@ class PlaybackEngine:
                 outdata[n:] = 0
             self._cursor += n
 
-    def prepare(self, spec: Tuple[str, str, int, str, Optional[str]],
-                unprocessed: bool = False) -> int:
+    def prepare(self, spec: Tuple[str, str, int, str, Optional[str]], unprocessed: bool = False) -> int:
         col, eng, oidx, track, sig = spec
         data = self.storage.read(
             collection=col, engine=eng, obj_idx=oidx,
@@ -86,12 +86,12 @@ class PlaybackEngine:
         self._cursor = 0
 
         self._stream = sd.OutputStream(
-            samplerate=self.storage.sample_rate,
+            samplerate=self.sample_rate,
             channels=data.shape[0],
             dtype=self.dtype,
             blocksize=self.blocksize,
             device=self.device,
-            callback=self._._callback,
+            callback=self._callback,
         )
         return data.shape[1]
 

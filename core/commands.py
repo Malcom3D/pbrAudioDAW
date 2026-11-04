@@ -34,9 +34,9 @@ from .playback import PlaybackEngine
 
 @dataclass
 class CommandContext:
-    browser: BrowserState
-    playback: PlaybackEngine
-    registry: CommandRegistry
+    browser: "BrowserState"
+    playback: "PlaybackEngine"
+    registry: "CommandRegistry"
     out: Optional[object] = None  # defaults to sys.stdout
 
     def __post_init__(self):
@@ -88,7 +88,6 @@ class CommandRegistry:
             ctx.echo(f"{name}: {e}")
             traceback.print_exc(file=ctx.out)
         return True
-
 
 # ----------------------------------------------------------------------
 # built-ins

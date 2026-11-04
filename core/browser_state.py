@@ -33,8 +33,6 @@ resolution is delegated to the backend, which knows how to enumerate
 children of every node via ``get_meta``.
 """
 
-from __future__ import annotations
-
 import os
 from dataclasses import dataclass, field
 from typing import Any, List, Optional, Sequence, Tuple
@@ -42,19 +40,18 @@ from typing import Any, List, Optional, Sequence, Tuple
 from pbrAudioStorage import StorageEngine
 from pbrAudioStorage.lib.audio_data_type import AudioDataType
 
-
 _ROOT = []
-
 
 @dataclass
 class BrowserEntry:
-       """One line in a directory listing."""
+    """
+    One line in a directory listing.
+    """
     name: str
     path: List[str]
     kind: str                      # "collection" | "engine" | "object" | "track" | "signal"
     meta: Optional[AudioDataType] = None
     extra: str = ""                # free-form annotation shown by ``ls -l``
-
 
 class BrowserState:
     """
@@ -170,7 +167,7 @@ class BrowserState:
         if arg == "-":
             if not self._history:
                 return None
-            return self._._history[-1]
+            return self._history[-1]
 
         base = [] if arg.startswith("/") else list(self._cwd)
         for seg in arg.split("/"):
