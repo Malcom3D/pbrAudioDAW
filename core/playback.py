@@ -49,17 +49,22 @@ class PlaybackEngine:
     _buffer: Optional[np.ndarray] = field(default=None, init=False, repr=False)
     _cursor: int = field(default=0, init=False, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
+    _done: threading.Event = field(default_factory=threading.Event, init=False, repr=False)
 
     def _callback(self, outdata, frames, time_info, status):
         with self._lock:
             if self._buffer is None:
                 outdata.fill(0)
+                self._done.set()
                 raise sd.CallbackStop
+
             S = self._buffer.shape[1]
             remaining = S - self._cursor
             if remaining <= 0:
                 outdata.fill(0)
+                self._done.set()
                 raise sd.CallbackStop
+
             n = min(frames, remaining)
             chunk = self._buffer[:, self._cursor:self._cursor + n].T
             outdata[:n] = chunk
@@ -67,7 +72,12 @@ class PlaybackEngine:
                 outdata[n:] = 0
             self._cursor += n
 
-    def prepare(self, spec: Tuple[str, str, int, str, Optional[str]], unprocessed: bool = False) -> int:
+            # Signal completion if we consumed the buffer in this call.
+            if self._cursor >= S:
+                self._done.set()
+
+    def prepare(self, spec: Tuple[str, str, int, str, Optional[str]],
+                unprocessed: bool = False) -> int:
         col, eng, oidx, track, sig = spec
         data = self.storage.read(
             collection=col, engine=eng, obj_idx=oidx,
@@ -82,6 +92,7 @@ class PlaybackEngine:
 
         self.stop()
 
+        self._done.clear()
         self._buffer = data
         self._cursor = 0
 
@@ -99,14 +110,23 @@ class PlaybackEngine:
                       duration_seconds: Optional[float] = None) -> None:
         if self._stream is None or self._buffer is None:
             raise RuntimeError("call prepare() first")
+
         if duration_seconds is not None:
-            max_samples = int(duration_seconds * self.storage.sample_rate)
+            max_samples = int(duration_seconds * self.sample_rate)
             with self._lock:
                 self._buffer = self._buffer[:, :max_samples]
+
+        # Ensure we have a live done-event for this playback.
+        if not isinstance(self._done, threading.Event):
+            self._done = threading.Event()
+        self._done.clear()
+
         self._stream.start()
         if block:
             try:
-                self._stream.wait()
+                # Wait until the callback has drained the buffer (or stop()
+                # has been called from another thread).
+                self._done.wait()
             finally:
                 self.stop()
 
@@ -122,6 +142,11 @@ class PlaybackEngine:
             self._stream = None
             self._buffer = None
             self._cursor = 0
+        # Trip the event so any waiter wakes up, even on error paths.
+        try:
+            self._done.set()
+        except Exception:
+            pass
         if stream is not None:
             try:
                 stream.stop()
