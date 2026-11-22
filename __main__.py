@@ -19,7 +19,7 @@
 """
 CLI entry point:
 
-    python -m pbrAudioDAW <scene_config.json>
+    python3 -m pbrAudioDAW <scene_config.json>
 """
 
 import argparse
